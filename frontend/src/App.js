@@ -5,7 +5,11 @@ function App() {
   const [code, setCode] = useState("// Write your code here...");
   const [language, setLanguage] = useState("javascript");
   const [userInput, setUserInput] = useState("");
-  const [output, setOutput] = useState(null);
+  const [output, setOutput] = useState({
+    bug_prediction: "",
+    llm_explanation: "",
+    execution_result: ""
+  });
   const [loading, setLoading] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -19,7 +23,12 @@ function App() {
         body: JSON.stringify({ code, language, user_input: userInput })
       });
       const data = await response.json();
-      setOutput(data);
+      // Ensure all fields exist
+      setOutput({
+        bug_prediction: data.bug_prediction || "",
+        llm_explanation: data.llm_explanation || "",
+        execution_result: data.execution_result || ""
+      });
     } catch (error) {
       console.error(error);
       setOutput({
@@ -77,8 +86,8 @@ function App() {
         {output && (
           <div style={{ marginTop: "10px" }}>
             <h3>ML Bug Prediction:</h3>
-            <p style={{ color: output.bug_prediction.includes("⚠️") ? "red" : "green" }}>
-              {output.bug_prediction}
+            <p style={{ color: output.bug_prediction?.includes("⚠️") ? "red" : "green" }}>
+              {output.bug_prediction || "No prediction yet."}
             </p>
 
             <h3>LLM Explanation:</h3>
@@ -91,7 +100,7 @@ function App() {
                 overflowY: "auto"
               }}
             >
-              {output.llm_explanation}
+              {output.llm_explanation || "No explanation yet."}
             </pre>
 
             <h3>Execution Output:</h3>
@@ -104,7 +113,7 @@ function App() {
                 overflowY: "auto"
               }}
             >
-              {output.execution_result}
+              {output.execution_result || "No output yet."}
             </pre>
           </div>
         )}
@@ -135,16 +144,22 @@ function App() {
           <button
             onClick={async () => {
               const userMessage = chatInput;
+              if (!userMessage.trim()) return; // prevent empty messages
               setChatHistory([...chatHistory, { role: "User", content: userMessage }]);
               setChatInput("");
 
-              const response = await fetch("http://localhost:5000/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userMessage })
-              });
-              const data = await response.json();
-              setChatHistory((prev) => [...prev, { role: "AI", content: data.reply }]);
+              try {
+                const response = await fetch("http://localhost:5000/chat", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: userMessage })
+                });
+                const data = await response.json();
+                setChatHistory((prev) => [...prev, { role: "AI", content: data.reply || "No reply." }]);
+              } catch (err) {
+                console.error(err);
+                setChatHistory((prev) => [...prev, { role: "AI", content: "Error connecting to backend." }]);
+              }
             }}
             style={{ padding: "6px 12px", marginTop: "5px" }}
           >

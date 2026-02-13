@@ -1,10 +1,11 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch"); // npm i node-fetch@2
 
 const app = express();
 const PORT = 5000;
+
+const PYTHON_AI_URL = "http://localhost:8000"; // ← Change to port 8000 (or any port != 5000)
 
 app.use(cors());
 app.use(express.json());
@@ -16,7 +17,7 @@ app.get("/", (req, res) => {
 app.post("/analyze", async (req, res) => {
   const { code, language, user_input } = req.body;
   try {
-    const response = await fetch("http://localhost:7000/analyze", {
+    const response = await fetch(`${PYTHON_AI_URL}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, language, user_input })
@@ -35,7 +36,7 @@ app.post("/analyze", async (req, res) => {
 
 app.post("/chat", async (req, res) => {
   try {
-    const response = await fetch("http://localhost:7000/chat", {
+    const response = await fetch(`${PYTHON_AI_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req.body)
@@ -43,6 +44,7 @@ app.post("/chat", async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (err) {
+    console.error("AI chat service error:", err.message || err);
     res.status(500).json({ reply: "Python AI chat service not reachable" });
   }
 });
