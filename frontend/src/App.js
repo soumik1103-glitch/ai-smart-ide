@@ -4,10 +4,23 @@ function App() {
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
 
-  const analyzeCode = () => {
-    setOutput("Code received! (AI analysis will come here)");
-  };
+  const analyzeCode = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ code })
+    });
 
+    const data = await response.json();
+    setOutput(data.result);
+  } catch (err) {
+    setOutput("Error connecting to backend");
+    console.error(err);
+  }
+};
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>AI-Powered Smart IDE</h1>
